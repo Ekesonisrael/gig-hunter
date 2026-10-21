@@ -1,84 +1,114 @@
-import json, os, sys, requests
+import json, os, sys, hashlib, re
+import requests, feedparser
 
-# --- 1. Read and clean secrets ---------------------------------------------
 def clean(name):
-    v = os.environ.get(name, "")
-    # kill stray whitespace/newlines and wrapping quotes from copy-paste
-    return v.strip().strip('"').strip("'").strip()
+    return os.environ.get(name, "").strip().strip('"').strip("'").strip()
 
 TOKEN = clean("TELEGRAM_BOT_TOKEN")
-CHAT = clean("TELEGRAM_CHAT_ID")
+CHAT  = clean("TELEGRAM_CHAT_ID")
+TEST  = clean("FEED_TEST") == "1"
+API   = f"https://api.telegram.org/bot{TOKEN}"
+SEEN_FILE = "seen.json"
+MAX_PER_RUN = 20
 
-def mask(s):
-    return f"{s[:6]}...{s[-4:]} (len={len(s)})" if s else "(EMPTY)"
+if not TOKEN or not CHAT:
+    sys.exit("FATAL: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set.")
 
-print("=== SECRETS ===")
-print("TELEGRAM_BOT_TOKEN:", mask(TOKEN))
-print("TELEGRAM_CHAT_ID  :", mask(CHAT))
-
-if not TOKEN:
-    sys.exit("FATAL: TELEGRAM_BOT_TOKEN is empty or not set in repo secrets.")
-if ":" not in TOKEN:
-    sys.exit("FATAL: TELEGRAM_BOT_TOKEN has no ':' - it is not a bot token.")
-if any(c in TOKEN for c in " \n\r\t"):
-    print("WARN: token still contains whitespace after cleaning.")
-
-API = f"https://api.telegram.org/bot{TOKEN}"
-
-# --- 2. Validate the token ------------------------------------------------
-print("\n=== getMe ===")
-r = requests.get(f"{API}/getMe", timeout=30)
-print(r.status_code, r.text)
-if not r.ok:
-    sys.exit("FATAL: token rejected by Telegram. Re-create/re-copy it from @BotFather.")
-
-def discover_chats():
-    """List chat IDs that have messaged the bot recently."""
-    print("\n=== getUpdates (finding your chat id) ===")
-    r = requests.get(f"{API}/getUpdates", timeout=30)
-    print(r.status_code, r.text)
-    if not r.ok:
-        print("Could not read updates.")
-        return []
-    found = []
-    for upd in r.json().get("result", []):
-        msg = upd.get("message") or upd.get("edited_message") or {}
-        chat = msg.get("chat") or {}
-        if chat.get("id") is not None:
-            entry = (chat["id"], chat.get("type"), chat.get("username") or chat.get("title") or chat.get("first_name"))
-            if entry not in found:
-                found.append(entry)
-    if found:
-        print("\n>>> CHAT IDS FOUND (copy the id into TELEGRAM_CHAT_ID):")
-        for cid, ctype, name in found:
-            print(f"    id={cid}  type={ctype}  name={name}")
-    else:
-        print("\n>>> No chats found. Open Telegram, message your bot /start, then re-run this workflow.")
-    return found
-
-# --- 3. Send ---------------------------------------------------------------
-def send(text):
-    if not CHAT:
-        print("\n=== sendMessage skipped: CHAT id is empty ===")
-        discover_chats()
-        sys.exit("FATAL: set TELEGRAM_CHAT_ID, then re-run.")
-    print("\n=== sendMessage ===")
-    r = requests.post(f"{API}/sendMessage",
-                      json={"chat_id": CHAT, "text": text},
-                      timeout=30)
-    print(r.status_code, r.text)
-    if r.ok:
-        print("SUCCESS: message delivered.")
-        return
-    # 400 usually means bad chat id -> try to recover it
-    if "chat not found" in r.text or "chat_id" in r.text:
-        print("\nChat id rejected. Attempting to discover the correct one...")
-        discover_chats()
-    sys.exit(f"FATAL: Telegram returned {r.status_code}. See description above.")
-
-# --- 4. Run ----------------------------------------------------------------
 with open("config.json") as f:
     cfg = json.load(f)
 
-profiles = ", ".join(cfg["profiles"].keys())
-send(f"Gig Hunter online. Profiles loaded: {profiles}. Sources: {len(cfg['sources'])}")
+KEYWORDS = sorted({k.lower() for p in cfg["profiles"].values() for k in p["keywords"]})
+
+def load_seen():
+    try:
+        with open(SEEN_FILE) as f:
+            return set(json.load(f))
+    except FileNotFoundError:
+        return set()
+
+def save_seen(seen):
+    with open(SEEN_FILE, "w") as f:
+        json.dump(sorted(seen), f, indent=0)
+
+def item_id(entry):
+    key = entry.get("link") or entry.get("id") or entry.get("title", "")
+    return hashlib.sha1(key.encode("utf-8", "ignore")).hexdigest()
+
+def strip_html(s):
+    return re.sub(r"<[^>]+>", "", s or "").strip()
+
+def matches(text):
+    t = text.lower()
+    return any(k in t for k in KEYWORDS)
+
+def send(text):
+    r = requests.post(f"{API}/sendMessage",
+                      json={"chat_id": CHAT, "text": text, "disable_web_page_preview": True},
+                      timeout=30)
+    if not r.ok:
+        sys.exit(f"Telegram {r.status_code}: {r.text}")
+    return r
+
+seen = load_seen()
+new_items = []
+
+print(f"Keywords: {len(KEYWORDS)} | feeds: {len(cfg['feeds'])} | seen: {len(seen)}")
+
+for feed in cfg["feeds"]:
+    if not feed.get("enabled"):
+        print(f"SKIP  {feed['name']} (disabled)")
+        continue
+    if "PASTE_" in feed["url"]:
+        print(f"SKIP  {feed['name']} (url not set)")
+        continue
+    try:
+        resp = requests.get(feed["url"], timeout=30,
+                            headers={"User-Agent": "gig-hunter/1.0"})
+        parsed = feedparser.parse(resp.content)
+        entries = parsed.entries
+        hits = 0
+        for e in entries:
+            iid = item_id(e)
+            if iid in seen:
+                continue
+            seen.add(iid)                      # mark seen even if not matched
+            title = strip_html(e.get("title", ""))
+            summary = strip_html(e.get("summary", ""))
+            if not matches(f"{title} {summary}"):
+                continue
+            new_items.append({
+                "source": feed["name"],
+                "title": title or "(no title)",
+                "link": e.get("link", ""),
+            })
+            hits += 1
+        print(f"OK    {feed['name']}: {len(entries)} entries, {hits} new matches")
+    except Exception as ex:
+        print(f"FAIL  {feed['name']}: {ex}")
+
+save_seen(seen)
+
+if TEST:
+    print(f"\nTEST MODE: {len(new_items)} matches, nothing sent.")
+    for i in new_items[:MAX_PER_RUN]:
+        print(f"  [{i['source']}] {i['title']}")
+    sys.exit(0)
+
+if not new_items:
+    print("No new matches. Staying quiet.")
+    sys.exit(0)
+
+batch = new_items[:MAX_PER_RUN]
+lines, chunk = [], ""
+for i in batch:
+    line = f"• {i['title']}\n{i['source']}\n{i['link']}\n\n"
+    if len(chunk) + len(line) > 3800:
+        lines.append(chunk); chunk = ""
+    chunk += line
+if chunk:
+    lines.append(chunk)
+
+for c in lines:
+    send(f"Gig Hunter — {len(batch)} new match(es)\n\n{c}")
+
+print(f"Sent {len(batch)} matches ({len(new_items) - len(batch)} deferred).")
