@@ -50,7 +50,7 @@ def score_and_pitch_job(title, summary):
     You are an expert recruiter filtering jobs for a freelancer based in Abuja, Nigeria.
     The freelancer has two profiles:
     1. Social Media Manager / Content Creator
-    2. Vibe Coder / AI No-Code Developer (Framer, Lovable, Bolt, etc.)
+    2. Vibe Coder / AI No-Code Developer (Framer, Lovable, Bolt, Webflow, etc.)
     
     Portfolio Link: {PORTFOLIO}
 
@@ -61,14 +61,16 @@ def score_and_pitch_job(title, summary):
     - Score 0-2 if it is Fully On-site. We DO NOT WANT fully on-site jobs.
     - Score 8-10 if it is 100% Global Remote.
     - Score 8-10 if it is Hybrid AND located in Abuja, Nigeria (e.g., Wuse).
-    - Score 0-2 if it strictly requires US/UK/EU work authorization or residency.
-    - Score 0-2 if it's a Senior, Lead, or Principal role. We want Junior/Mid-level or Freelance.
+    - Score 0-2 if it strictly requires US/UK/EU work authorization (e.g., "US-based only", "Must reside in North America").
+    - Score 0-2 if it's a Senior, Lead, or Principal role.
     - Score 0-2 if it's unpaid, commission-only, or just "exposure".
+    - **CRITICAL:** Score 0-2 if the job requires Enterprise IT, heavy backend engineering, cloud architecture, storage (VMAX, Symmetrix), or deep coding (React, C++, Python). The freelancer does NO-CODE and SOCIAL MEDIA. Do not confuse "scripts" with No-Code development.
     - Score 4-6 if it's ambiguous.
 
     IF THE SCORE IS 7 OR HIGHER:
     Write a short, punchy 3-sentence pitch/cover letter (max 60 words). 
-    Mention that my portfolio is {PORTFOLIO}. Be direct, confident, and ready to send.
+    Mention that my portfolio is {PORTFOLIO}. Be direct and confident. 
+    **CRITICAL: Do NOT invent or hallucinate experience. Only pitch skills related to Social Media, Web Design, No-Code, or AI automation.**
 
     Return ONLY a valid JSON object with this exact structure:
     {{"score": <integer 0-10>, "reason": "<short reason max 10 words>", "pitch": "<pitch text or empty string if score < 7>"}}
