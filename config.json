@@ -1,13 +1,20 @@
 {
   "profiles": {
     "social": {
-      "keywords": ["social media manager", "content creator", "content strategist", "TikTok manager", "Instagram manager"],
+      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media"],
       "portfolio_link": ""
     },
     "vibe": {
-      "keywords": ["vibe coding", "AI website", "landing page", "no-code developer", "AI automation"],
+      "keywords": ["vibe coding", "ai website", "landing page", "no-code", "nocode", "ai automation", "webflow", "framer", "lovable", "bolt.new"],
       "portfolio_link": ""
     }
   },
-  "sources": []
+  "feeds": [
+    { "name": "WeWorkRemotely Marketing", "url": "https://weworkremotely.com/categories/remote-marketing-jobs.rss", "enabled": true },
+    { "name": "WeWorkRemotely Programming", "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss", "enabled": true },
+    { "name": "Remotive", "url": "https://remotive.com/remote-jobs/feed", "enabled": true },
+    { "name": "Jobicy", "url": "https://jobicy.com/?feed=job_feed", "enabled": true },
+    { "name": "Himalayas", "url": "https://himalayas.app/jobs/rss", "enabled": true },
+    { "name": "Google Alert: need a website", "url": "PASTE_YOUR_GOOGLE_ALERTS_RSS_URL_HERE", "enabled": false }
+  ]
 }
