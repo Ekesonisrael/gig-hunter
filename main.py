@@ -1,4 +1,4 @@
-import json, os, sys, hashlib, re, time
+import json, os, sys, hashlib, re, time, datetime
 import requests, feedparser
 
 def clean(name):
@@ -11,7 +11,7 @@ TEST  = clean("FEED_TEST") == "1"
 API   = f"https://api.telegram.org/bot{TOKEN}"
 SEEN_FILE = "seen.json"
 MAX_PER_RUN = 10
-MAX_AI_CHECKS = 10  # Reduced from 25 to avoid hitting Groq's free token limit
+MAX_AI_CHECKS = 10  # Reduced to avoid hitting Groq's free token limit
 
 if not TOKEN or not CHAT or not GROQ_KEY:
     sys.exit("FATAL: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, or GROQ_API_KEY missing.")
@@ -44,10 +44,32 @@ def matches(text):
     t = text.lower()
     return any(k in t for k in KEYWORDS)
 
+def is_fresh(entry):
+    """Check if the job was posted less than 2 days ago."""
+    date_field = None
+    if hasattr(entry, "published_parsed") and entry.published_parsed:
+        date_field = entry.published_parsed
+    elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
+        date_field = entry.updated_parsed
+
+    if not date_field:
+        return False  # No date provided, skip it to be safe
+
+    try:
+        # Convert the feed's date to a timezone-aware datetime
+        pub_dt = datetime.datetime(*date_field[:6], tzinfo=datetime.timezone.utc)
+        now_dt = datetime.datetime.now(datetime.timezone.utc)
+        age = now_dt - pub_dt
+        
+        # 2 days = 172,800 seconds
+        if age.total_seconds() > 172800:
+            return False
+        return True
+    except Exception:
+        return False
+
 def score_and_pitch_job(title, summary):
     """Ask Groq to score the job and write a pitch."""
-    
-    # We cut the summary to 1000 characters to save tokens and prevent 429 errors
     prompt = f"""
     You are an expert recruiter filtering jobs for a freelancer in Abuja, Nigeria.
     The freelancer has two profiles: 
@@ -132,9 +154,14 @@ for feed in cfg["feeds"]:
                 continue
             seen.add(iid)
             
+            # 1. Check if job is older than 2 days
+            if not is_fresh(e):
+                continue
+                
             title = strip_html(e.get("title", ""))
             summary = strip_html(e.get("summary", ""))
             
+            # 2. Check keywords
             if not matches(f"{title} {summary}"):
                 continue
                 
@@ -145,7 +172,7 @@ for feed in cfg["feeds"]:
             print(f"Checking: {title}")
             score, reason, pitch = score_and_pitch_job(title, summary)
             ai_checks += 1
-            time.sleep(1.5) # Increased delay slightly to respect rate limits
+            time.sleep(1.5) 
             
             print(f"  -> Score: {score} ({reason})")
             
