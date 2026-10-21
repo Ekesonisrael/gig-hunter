@@ -12,9 +12,21 @@
   "feeds": [
     { "name": "WeWorkRemotely Marketing", "url": "https://weworkremotely.com/categories/remote-marketing-jobs.rss", "enabled": true },
     { "name": "WeWorkRemotely Programming", "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss", "enabled": true },
+    { "name": "WeWorkRemotely Design", "url": "https://weworkremotely.com/categories/remote-design-jobs.rss", "enabled": true },
     { "name": "Remotive", "url": "https://remotive.com/remote-jobs/feed", "enabled": true },
     { "name": "Jobicy", "url": "https://jobicy.com/?feed=job_feed", "enabled": true },
     { "name": "Himalayas", "url": "https://himalayas.app/jobs/rss", "enabled": true },
-    { "name": "Google Alert: need a website", "url": "PASTE_YOUR_GOOGLE_ALERTS_RSS_URL_HERE", "enabled": false }
+    { "name": "Working Nomads", "url": "https://www.workingnomads.com/rss", "enabled": true },
+    { "name": "Jobspresso", "url": "https://jobspresso.co/?feed=job_feed", "enabled": true },
+    { "name": "Remote OK", "url": "https://remoteok.com/rss", "enabled": true },
+    { "name": "Dribbble Design Jobs", "url": "https://dribbble.com/jobs.rss", "enabled": true },
+    
+    { "name": "Twitter - Web Dev", "url": "https://www.google.com/alerts/feeds/02904241594802394036/2044711174142525095", "enabled": true },
+    { "name": "Twitter - Need Website", "url": "https://www.google.com/alerts/feeds/02904241594802394036/7258601533427330401", "enabled": true },
+    { "name": "Twitter - Social Media", "url": "https://www.google.com/alerts/feeds/02904241594802394036/7903490250335792281", "enabled": true },
+    { "name": "LinkedIn - Social Media", "url": "https://www.google.com/alerts/feeds/02904241594802394036/14798418280797467049", "enabled": true },
+    { "name": "LinkedIn - Web Dev", "url": "https://www.google.com/alerts/feeds/02904241594802394036/1722506992837649523", "enabled": true },
+    { "name": "Reddit - Web Dev", "url": "https://www.google.com/alerts/feeds/02904241594802394036/16888971442032862105", "enabled": true },
+    { "name": "Reddit - Social Media", "url": "https://www.google.com/alerts/feeds/02904241594802394036/5352241768785360107", "enabled": true }
   ]
 }
