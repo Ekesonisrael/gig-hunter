@@ -11,7 +11,7 @@ TEST  = clean("FEED_TEST") == "1"
 API   = f"https://api.telegram.org/bot{TOKEN}"
 SEEN_FILE = "seen.json"
 MAX_PER_RUN = 10
-MAX_AI_CHECKS = 25  
+MAX_AI_CHECKS = 10  # Reduced from 25 to avoid hitting Groq's free token limit
 
 if not TOKEN or not CHAT or not GROQ_KEY:
     sys.exit("FATAL: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, or GROQ_API_KEY missing.")
@@ -46,31 +46,36 @@ def matches(text):
 
 def score_and_pitch_job(title, summary):
     """Ask Groq to score the job and write a pitch."""
+    
+    # We cut the summary to 1000 characters to save tokens and prevent 429 errors
     prompt = f"""
-    You are an expert recruiter filtering jobs for a freelancer based in Abuja, Nigeria.
-    The freelancer has two profiles:
-    1. Social Media Manager / Content Creator
-    2. Vibe Coder / AI No-Code Developer (Framer, Lovable, Bolt, Webflow, etc.)
+    You are an expert recruiter filtering jobs for a freelancer in Abuja, Nigeria.
+    The freelancer has two profiles: 
+    1. Social Media Manager 
+    2. Vibe Coder / AI No-Code Developer (Framer, Webflow, Lovable).
     
     Portfolio Link: {PORTFOLIO}
 
     Job Title: {title}
-    Job Description: {summary[:2000]}
+    Job Description: {summary[:1000]}
 
     RULES FOR SCORING (0-10):
     - Score 0-2 if it is Fully On-site. We DO NOT WANT fully on-site jobs.
     - Score 8-10 if it is 100% Global Remote.
-    - Score 8-10 if it is Hybrid AND located in Abuja, Nigeria (e.g., Wuse).
-    - Score 0-2 if it strictly requires US/UK/EU work authorization (e.g., "US-based only", "Must reside in North America").
+    - Score 8-10 if it is Hybrid AND located in Abuja, Nigeria.
+    - Score 0-2 if it strictly requires US/UK/EU work authorization.
     - Score 0-2 if it's a Senior, Lead, or Principal role.
     - Score 0-2 if it's unpaid, commission-only, or just "exposure".
-    - **CRITICAL:** Score 0-2 if the job requires Enterprise IT, heavy backend engineering, cloud architecture, storage (VMAX, Symmetrix), or deep coding (React, C++, Python). The freelancer does NO-CODE and SOCIAL MEDIA. Do not confuse "scripts" with No-Code development.
+    - **CRITICAL:** Score 0-2 if the job is pure Sales, Account Management, or Business Development. We only want execution roles (Social Media or Web/No-Code).
+    - **CRITICAL:** Score 0-2 if the job requires Enterprise IT, heavy backend engineering, storage (VMAX, Symmetrix), or deep coding (React, C++). 
     - Score 4-6 if it's ambiguous.
 
     IF THE SCORE IS 7 OR HIGHER:
-    Write a short, punchy 3-sentence pitch/cover letter (max 60 words). 
-    Mention that my portfolio is {PORTFOLIO}. Be direct and confident. 
-    **CRITICAL: Do NOT invent or hallucinate experience. Only pitch skills related to Social Media, Web Design, No-Code, or AI automation.**
+    Write a short, punchy 3-sentence pitch (max 60 words). 
+    **CRITICAL:** ONLY pitch the skills that match the job title. 
+    - If the job is Web Design/No-Code, pitch Vibe Coding and mention {PORTFOLIO}.
+    - If the job is Social Media, pitch Content Strategy and mention {PORTFOLIO}.
+    Do NOT invent experience. Do NOT mix the two profiles.
 
     Return ONLY a valid JSON object with this exact structure:
     {{"score": <integer 0-10>, "reason": "<short reason max 10 words>", "pitch": "<pitch text or empty string if score < 7>"}}
@@ -90,7 +95,7 @@ def score_and_pitch_job(title, summary):
     try:
         r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=20)
         if not r.ok:
-            print(f"  [AI Error] Groq returned {r.status_code}: {r.text}")
+            print(f"  [AI Error] Groq returned {r.status_code}")
             return 0, "AI Error", ""
         
         content = r.json()["choices"][0]["message"]["content"]
@@ -140,7 +145,7 @@ for feed in cfg["feeds"]:
             print(f"Checking: {title}")
             score, reason, pitch = score_and_pitch_job(title, summary)
             ai_checks += 1
-            time.sleep(1) 
+            time.sleep(1.5) # Increased delay slightly to respect rate limits
             
             print(f"  -> Score: {score} ({reason})")
             
