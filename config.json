@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "social": {
+      "keywords": ["social media manager", "content creator", "content strategist", "TikTok manager", "Instagram manager"],
+      "portfolio_link": ""
+    },
+    "vibe": {
+      "keywords": ["vibe coding", "AI website", "landing page", "no-code developer", "AI automation"],
+      "portfolio_link": ""
+    }
+  },
+  "sources": []
+}
