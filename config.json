@@ -1,11 +1,11 @@
 {
   "profiles": {
     "social": {
-      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media"],
+      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media", "copywriter", "content writer"],
       "portfolio_link": ""
     },
     "vibe": {
-      "keywords": ["vibe coding", "ai website", "landing page", "no-code", "nocode", "ai automation", "webflow", "framer", "lovable", "bolt.new"],
+      "keywords": ["vibe coding", "ai website", "landing page", "no-code", "nocode", "ai automation", "webflow", "framer", "lovable", "bolt.new", "web developer", "website", "web design", "wordpress", "shopify"],
       "portfolio_link": ""
     }
   },
