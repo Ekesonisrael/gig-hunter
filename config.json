@@ -1,7 +1,7 @@
 {
   "profiles": {
     "social": {
-      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media", "copywriter", "content writer"],
+      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media", "copywriter", "content writer", "meta ads", "tiktok ads", "paid social", "community manager", "ugc", "digital marketing"],
       "portfolio_link": "https://israelchima.vercel.app"
     },
     "vibe": {
@@ -10,6 +10,8 @@
     }
   },
   "feeds": [
+    { "name": "Jobberman", "url": "https://www.jobberman.com/jobs?rss=1", "enabled": true },
+    { "name": "MyJobMag", "url": "https://www.myjobmag.com/rss/jobs", "enabled": true },
     { "name": "WeWorkRemotely Marketing", "url": "https://weworkremotely.com/categories/remote-marketing-jobs.rss", "enabled": true },
     { "name": "WeWorkRemotely Programming", "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss", "enabled": true },
     { "name": "WeWorkRemotely Design", "url": "https://weworkremotely.com/categories/remote-design-jobs.rss", "enabled": true },
@@ -20,7 +22,6 @@
     { "name": "Jobspresso", "url": "https://jobspresso.co/?feed=job_feed", "enabled": true },
     { "name": "Remote OK", "url": "https://remoteok.com/rss", "enabled": true },
     { "name": "Dribbble Design Jobs", "url": "https://dribbble.com/jobs.rss", "enabled": true },
-    
     { "name": "Twitter - Web Dev", "url": "https://www.google.com/alerts/feeds/02904241594802394036/2044711174142525095", "enabled": true },
     { "name": "Twitter - Need Website", "url": "https://www.google.com/alerts/feeds/02904241594802394036/7258601533427330401", "enabled": true },
     { "name": "Twitter - Social Media", "url": "https://www.google.com/alerts/feeds/02904241594802394036/7903490250335792281", "enabled": true },
