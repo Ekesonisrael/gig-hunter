@@ -1,40 +1,71 @@
-name: gig-hunter
+name: Gig Hunter
+
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    # Every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+    # 6 runs/day × MAX_AI_CHECKS=30 → 180 Groq calls/day worst case.
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Run in TEST mode (no Telegram send, seen.json not saved)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
-permissions:
-  contents: write
-
+# Prevent overlapping runs from clobbering seen.json.
 concurrency:
   group: gig-hunter
   cancel-in-progress: false
 
+permissions:
+  contents: write   # needed to commit seen.json back to the repo
+
 jobs:
-  run:
+  hunt:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          python-version: "3.12"
-      
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
       - name: Install dependencies
-        run: pip install requests feedparser
-      
-      - name: Run Collector and AI Filter
-        run: python main.py
+        run: pip install -r requirements.txt
+
+      - name: Run Gig Hunter
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          FEED_TEST: ${{ vars.FEED_TEST }}
-          
-      - name: Save seen list
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          FEED_TEST:          ${{ github.event.inputs.test_mode == 'true' && '1' || '0' }}
+        run: python main.py
+
+      - name: Persist seen.json
+        if: always() && github.event.inputs.test_mode != 'true'
         run: |
-          git config user.name  "gig-hunter-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add seen.json
-          git diff --staged --quiet || git commit -m "update seen list"
-          git push
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f seen.json ]; then
+            git add seen.json
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: update seen.json [skip ci]"
+              # Retry once with rebase in case a manual push raced us.
+              git push || (git pull --rebase --autostash && git push)
+            else
+              echo "seen.json unchanged; nothing to commit."
+            fi
+          else
+            echo "seen.json not created this run; nothing to commit."
+          fi
