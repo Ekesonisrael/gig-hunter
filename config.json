@@ -1,21 +1,32 @@
 {
   "profiles": {
     "social": {
-      "keywords": ["social media manager", "content creator", "content strategist", "tiktok manager", "instagram manager", "social media", "copywriter", "content writer", "meta ads", "tiktok ads", "paid social", "community manager", "ugc", "digital marketing"],
+      "keywords": [
+        "social media manager", "social media", "content strategist",
+        "content creator", "copywriter", "ugc", "paid social",
+        "meta ads", "tiktok ads", "community manager",
+        "instagram manager", "tiktok manager"
+      ],
+      "skills": "Meta Ads (Facebook/Instagram), TikTok organic and paid, Instagram growth, UGC production, content calendars, copywriting, community management. Abuja-based, available remote and hybrid.",
       "portfolio_link": "https://israelchima.vercel.app"
     },
     "vibe": {
-      "keywords": ["vibe coding", "ai website", "landing page", "no-code", "nocode", "ai automation", "webflow", "framer", "lovable", "bolt.new", "web developer", "website", "web design", "wordpress", "shopify", "abuja", "hybrid"],
+      "keywords": [
+        "vibe coding", "landing page", "no-code", "nocode",
+        "ai automation", "webflow", "framer", "lovable",
+        "bolt.new", "shopify manager", "shopify store"
+      ],
+      "skills": "Webflow, Framer, Lovable, Bolt.new, no-code landing pages, AI workflow automations (n8n, Make), WordPress, Shopify storefronts. Abuja-based, available remote and hybrid.",
       "portfolio_link": "https://israelchima.vercel.app"
     }
   },
   "feeds": [
-    { "name": "WeWorkRemotely Programming", "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss", "enabled": true },
-    { "name": "WeWorkRemotely Design", "url": "https://weworkremotely.com/categories/remote-design-jobs.rss", "enabled": true },
-    { "name": "Remotive", "url": "https://remotive.com/remote-jobs/feed", "enabled": true },
-    { "name": "Jobicy", "url": "https://jobicy.com/?feed=job_feed", "enabled": true },
-    { "name": "Himalayas", "url": "https://himalayas.app/jobs/rss", "enabled": true },
-    { "name": "Jobspresso", "url": "https://jobspresso.co/?feed=job_feed", "enabled": true },
-    { "name": "Dribbble Design Jobs", "url": "https://dribbble.com/jobs.rss", "enabled": true }
+    { "name": "WWR Marketing",  "url": "https://weworkremotely.com/categories/remote-marketing-jobs.rss", "enabled": true },
+    { "name": "WWR Design",     "url": "https://weworkremotely.com/categories/remote-design-jobs.rss",     "enabled": true },
+    { "name": "Remotive Marketing", "url": "https://remotive.com/remote-jobs/feed/marketing",              "enabled": true },
+    { "name": "Remotive All",   "url": "https://remotive.com/remote-jobs/feed",                           "enabled": true },
+    { "name": "Jobicy Marketing", "url": "https://jobicy.com/?feed=job_feed&job_categories=marketing",   "enabled": true },
+    { "name": "Himalayas",      "url": "https://himalayas.app/jobs/rss",                                  "enabled": true },
+    { "name": "Jobspresso",     "url": "https://jobspresso.co/?feed=job_feed",                            "enabled": true }
   ]
 }
