@@ -2,8 +2,7 @@ name: Gig Hunter
 
 on:
   schedule:
-    # Every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
-    # 6 runs/day × MAX_AI_CHECKS=30 → 180 Groq calls/day worst case.
+    # Every 4 hours
     - cron: '0 */4 * * *'
   workflow_dispatch:
     inputs:
@@ -16,7 +15,7 @@ on:
           - 'false'
           - 'true'
 
-# Prevent overlapping runs from clobbering seen.json.
+# Prevent overlapping runs from clobbering seen.json
 concurrency:
   group: gig-hunter
   cancel-in-progress: false
@@ -39,10 +38,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests feedparser
 
       - name: Run Gig Hunter
         env:
@@ -61,7 +59,6 @@ jobs:
             git add seen.json
             if ! git diff --cached --quiet; then
               git commit -m "chore: update seen.json [skip ci]"
-              # Retry once with rebase in case a manual push raced us.
               git push || (git pull --rebase --autostash && git push)
             else
               echo "seen.json unchanged; nothing to commit."
