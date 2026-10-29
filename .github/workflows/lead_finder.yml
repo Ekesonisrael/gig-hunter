@@ -1,9 +1,9 @@
 name: Abuja Lead Finder
 
 on:
-  workflow_dispatch: # This lets you click a button to run it manually for testing
+  workflow_dispatch:
   # schedule:
-  #   - cron: '0 8 * * *' # We will uncomment this later to run it automatically every day at 8 AM
+  #   - cron: '0 8 * * *'
 
 jobs:
   find_leads:
@@ -18,7 +18,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests
 
       - name: Run Lead Finder
         env:
@@ -26,4 +26,5 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SHEETS_WEBHOOK_URL: ${{ secrets.SHEETS_WEBHOOK_URL }} # <-- THIS IS THE MISSING LINE
         run: python lead_finder.py
