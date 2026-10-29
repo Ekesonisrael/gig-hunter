@@ -5,7 +5,6 @@ import time
 import urllib.parse
 import sys
 
-# Pull keys from GitHub Secrets
 SERPER_KEY = os.environ.get("SERPER_API_KEY")
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -35,7 +34,7 @@ def generate_pitch(name, category):
     """
     headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
     payload = {
-        "model": "llama3-8b-8192",
+        "model": "llama-3.1-8b-instant", # Updated model
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7
     }
@@ -43,13 +42,22 @@ def generate_pitch(name, category):
         r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=20)
         if r.ok:
             return r.json()["choices"][0]["message"]["content"].strip()
+        else:
+            print(f"Groq API Error: {r.status_code} - {r.text}")
     except Exception as e:
-        print(f"Groq Error: {e}")
+        print(f"Groq Exception: {e}")
+        
     return "Hi! I noticed you don't have a website yet. I build 1-page sites for local businesses in Abuja. Can I send you a demo?"
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "disable_web_page_preview": True}
+    # Added parse_mode HTML to fix the formatting!
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID, 
+        "text": text, 
+        "disable_web_page_preview": True,
+        "parse_mode": "HTML" 
+    }
     r = requests.post(url, json=payload)
     if not r.ok:
         print(f"Telegram Error: {r.text}")
@@ -90,14 +98,15 @@ def main():
             wa_phone = phone.replace(" ", "").replace("+", "")
             wa_link = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(pitch)}"
             
+            # Changed ** to <b> for HTML formatting
             msg = (
-                f"🎯 **[LEAD GEN] NEW BUSINESS FOUND**\n"
-                f"🏢 **Name:** {name}\n"
-                f"📞 **Phone:** {phone}\n"
-                f"⭐ **Rating:** {rating} ({rating_count} reviews)\n"
-                f"📍 **Address:** {address}\n\n"
-                f"💬 **AI Pitch:**\n{pitch}\n\n"
-                f"👉 **[CLICK HERE TO SEND ON WHATSAPP]({wa_link})**"
+                f"🎯 <b>[LEAD GEN] NEW BUSINESS FOUND</b>\n"
+                f"🏢 <b>Name:</b> {name}\n"
+                f"📞 <b>Phone:</b> {phone}\n"
+                f"⭐ <b>Rating:</b> {rating} ({rating_count} reviews)\n"
+                f"📍 <b>Address:</b> {address}\n\n"
+                f"💬 <b>AI Pitch:</b>\n{pitch}\n\n"
+                f"👉 <a href='{wa_link}'>CLICK HERE TO SEND ON WHATSAPP</a>"
             )
             
             send_telegram(msg)
