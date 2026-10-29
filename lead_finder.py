@@ -5,26 +5,32 @@ import time
 import urllib.parse
 import sys
 
+# --- Load Secrets from GitHub Actions ---
 SERPER_KEY = os.environ.get("SERPER_API_KEY")
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+SHEETS_WEBHOOK_URL = os.environ.get("SHEETS_WEBHOOK_URL")
 
-if not all([SERPER_KEY, GROQ_KEY, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
-    print("FATAL: Missing API keys in environment variables.")
+if not all([SERPER_KEY, GROQ_KEY, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, SHEETS_WEBHOOK_URL]):
+    print("FATAL ERROR: One or more API keys are missing from Environment Variables.")
     sys.exit(1)
 
+# --- What we are searching for today ---
 SEARCH_QUERIES = [
     "Salon in Wuse 2 Abuja",
     "Shortlet apartment in Jabi Abuja"
 ]
 
 def is_real_website(url):
-    if not url: return False
-    fake_sites = ["instagram.com", "facebook.com", "linktr.ee", "wa.me", "bit.ly"]
+    """Filters out businesses that only have Instagram/Facebook or no website at all."""
+    if not url: 
+        return False
+    fake_sites = ["instagram.com", "facebook.com", "linktr.ee", "wa.me", "bit.ly", "twitter.com"]
     return not any(site in url.lower() for site in fake_sites)
 
 def generate_pitch(name, category):
+    """Uses Groq AI to write a personalized WhatsApp pitch."""
     prompt = f"""
     You are a freelance web developer in Abuja. 
     Write a short, friendly WhatsApp message to the owner of "{name}" (a {category} in Abuja).
@@ -50,8 +56,8 @@ def generate_pitch(name, category):
     return "Hi! I noticed you don't have a website yet. I build 1-page sites for local businesses in Abuja. Can I send you a demo?"
 
 def send_telegram(text):
+    """Sends the formatted HTML message to your Telegram bot."""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    # Added parse_mode HTML to fix the formatting!
     payload = {
         "chat_id": TELEGRAM_CHAT_ID, 
         "text": text, 
@@ -61,6 +67,21 @@ def send_telegram(text):
     r = requests.post(url, json=payload)
     if not r.ok:
         print(f"Telegram Error: {r.text}")
+
+def log_to_sheet(name, phone, address, rating):
+    """Sends the lead to your Google Sheet CRM."""
+    payload = {
+        "name": name,
+        "phone": phone,
+        "address": address,
+        "rating": rating
+    }
+    try:
+        r = requests.post(SHEETS_WEBHOOK_URL, json=payload, timeout=10)
+        if not r.ok:
+            print(f"Sheet Log Error: {r.text}")
+    except Exception as e:
+        print(f"Sheet Exception: {e}")
 
 def main():
     print("Starting Lead Finder...")
@@ -87,18 +108,22 @@ def main():
             rating = place.get("rating", "N/A")
             address = place.get("address", "Unknown Address")
             
-            if not phone: continue
-            if rating_count < 10: continue 
-            if is_real_website(website): continue
+            # Apply the filters
+            if not phone or rating_count < 10 or is_real_website(website):
+                continue
             
             category = "salon" if "salon" in query.lower() else "shortlet business"
             print(f"Found a lead: {name}. Generating pitch...")
             
+            # 1. Save to Google Sheet CRM
+            log_to_sheet(name, phone, address, f"{rating} ({rating_count} reviews)")
+            
+            # 2. Generate AI Pitch
             pitch = generate_pitch(name, category)
             wa_phone = phone.replace(" ", "").replace("+", "")
             wa_link = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(pitch)}"
             
-            # Changed ** to <b> for HTML formatting
+            # 3. Send to Telegram with HTML formatting
             msg = (
                 f"🎯 <b>[LEAD GEN] NEW BUSINESS FOUND</b>\n"
                 f"🏢 <b>Name:</b> {name}\n"
@@ -111,8 +136,7 @@ def main():
             
             send_telegram(msg)
             leads_found += 1
-            print(f"✅ Sent {name} to Telegram!")
-            time.sleep(2) 
+            time.sleep(2) # Prevent Telegram rate limits
             
         print(f"Done. Found {leads_found} leads for this query.")
         time.sleep(1)
